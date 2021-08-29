@@ -1,0 +1,68 @@
+---
+- name: Create config folder for postfix
+  file:
+    path: "/etc/postfix/{{ item }}"
+    state: directory
+    owner: "root"
+    group: "root"
+    mode: '0755'
+  loop: "{{ folders_postfix }}"
+
+- name: Create config folder for dovecot
+  file:
+    path: "/etc/dovecot/{{ item }}"
+    state: directory
+    owner: "root"
+    group: "root"
+    mode: '0755'
+  loop: "{{ folders_dovecot }}"
+
+- name: Create config folder for amavis
+  file:
+    path: "/etc/amavis/{{ item }}"
+    state: directory
+    owner: "root"
+    group: "root"
+    mode: '0755'
+  loop: "{{ folders_amavis }}"
+
+- name: Create config folder for ssl_dh
+  file:
+    path: "/etc/ssl/{{ item }}"
+    state: directory
+    owner: "root"
+    group: "root"
+    mode: '0755'
+  loop: "{{ folders_ssl }}"
+
+- name: Check if /var/spool/filter directory exists
+  stat:
+    path: /var/spool/filter
+  register: var_spool_filter_directory_present
+
+- name: Create /var/spool/filter directory
+  file:
+    path: /var/spool/filter
+    state: directory
+    owner: filter
+    group: filter
+    mode: '0750'
+  when:
+    - ( disclaimer_enable|bool )
+    - ( not var_spool_filter_directory_present['stat']['exists'] )
+
+- name: Check if /etc/disclaimer directory exists
+  stat:
+    path: /etc/disclaimer
+  register: etc_disclaimer_directory_present
+
+- name: Create /etc/disclaimer directory
+  file:
+    path: /etc/disclaimer
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when:
+    - (( disclaimer_enable is defined ) and ( disclaimer_enable|bool ))
+    - ( not etc_disclaimer_directory_present['stat']['exists'] )

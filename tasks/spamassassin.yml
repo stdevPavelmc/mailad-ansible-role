@@ -1,0 +1,21 @@
+---
+- name: Apply template to /etc/default/spamassassin
+  template:
+    src: ../templates/etc/default/spamassassin.j2
+    dest: /etc/default/spamassassin
+    owner: root
+    group: root
+    mode: '0644'
+    backup: yes
+  when:
+    - ( spamd_enable is defined )
+    - ( spamd_enable|bool )
+  notify: Enable spamassassin
+
+- name: Remove /etc/default/spamassassin
+  file:
+    path: /etc/default/spamassassin
+    state: absent
+  when:
+    - ( spamd_enable is not defined ) or ( not spamd_enable|bool )
+  notify: Disable spamassassin

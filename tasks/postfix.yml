@@ -1,0 +1,46 @@
+---
+- name: Apply template to /etc/postfix/aliases/alias_virtuales
+  template:
+    src: ../templates/etc/postfix/aliases/alias_virtuales.j2
+    dest: /etc/postfix/aliases/alias_virtuales
+    owner: root
+    group: root
+    mode: '0644'
+  notify: postmap alias_virtuales
+
+- name: Apply template to /etc/postfix/rules/everyone_list_check
+  template:
+    src: ../templates/etc/postfix/rules/everyone_list_check.j2
+    dest: /etc/postfix/rules/everyone_list_check
+    owner: root
+    group: root
+    mode: '0644'
+  notify: postmap everyone_list_check
+
+- name: Apply template to /etc/postfix/rules/filter_loc
+  template:
+    src: ../templates/etc/postfix/rules/filter_loc.j2
+    dest: /etc/postfix/rules/filter_loc
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Postfix check
+
+- name: Apply template to /etc/postfix/rules/lista_negra
+  template:
+    src: ../templates/etc/postfix/rules/lista_negra.j2
+    dest: /etc/postfix/rules/lista_negra
+    owner: root
+    group: root
+    mode: '0644'
+  notify: postmap lista_negra
+
+- name: "Apply templates to /etc/postfix folder items"
+  template:
+    src: "../templates/etc/postfix/{{ item }}.j2"
+    dest: "/etc/postfix/{{ item }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop: "{{ postfix_templates }}"
+  notify: Postfix check

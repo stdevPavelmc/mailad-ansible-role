@@ -1,0 +1,55 @@
+---
+# group
+- name: Ensure "{{ mailbox_username }}" group exists
+  group:
+    name: "{{ mailbox_username }}"
+    gid: "{{ mailbox_gid }}"
+    state: present
+
+# user
+- name: Ensure "{{ mailbox_username }}" user exists
+  user:
+    name: "{{ mailbox_username }}"
+    home: "{{ mailbox_path }}"
+    shell: /bin/false
+    uid: "{{ mailbox_uid }}"
+    group: "{{ mailbox_username }}"
+    groups: "{{ mailbox_username }}"
+    append: no
+    comment: Domain Mailbox Owner
+
+# check mailbox folder exist
+- name: Make sure "{{ mailbox_path }}" folder exist
+  file:
+    path: "{{ mailbox_path }}"
+    state: directory
+    owner: "{{ mailbox_uid }}"
+    group: "{{ mailbox_gid }}"
+    mode: '0770'
+
+# force permissions
+- name: "Enforce file and folder attributes in {{ mailbox_path }}"
+  file:
+    dest: "{{ mailbox_path }}"
+    owner: "{{ mailbox_uid }}"
+    group: "{{ mailbox_uid }}"
+    mode: u=rwX,g=rwX,o-rwx
+    recurse: yes
+
+# user for disclaimer
+- name: Ensure "filter" user exists if nedeed
+  user:
+    name: filter
+    home: /var/spool/filter
+    system: yes
+    comment: Postfix Filters
+    state: present
+  when:
+    - ( disclaimer_enable is defined )
+    - ( disclaimer_enable|bool )
+
+- name: Erase "filter" user when not needed
+  user:
+    name: filter
+    state: absent
+  when: ( not disclaimer_enable is defined ) or ( not disclaimer_enable|bool )

@@ -1,0 +1,34 @@
+# Listado de alias virtuales para el dominio
+# 
+# hacer al terminar "postmap alias_virtuales && postfix reload"
+
+# #####################################################
+# DEFAULTS del dominio por RFC
+# TIENEN que apuntar a una direccion valida
+# incluso puede apuntar a otro alias
+# #####################################################
+{% if sysadmins is defined and sysadmins %}
+abuse@{{ domain_fqdn }}			{{ sysadmins }}
+{% else %}
+abuse@{{ domain_fqdn }}			{{ mailadmin }}
+{% endif %}
+{% if sysadmins is defined and sysadmins %}
+postmaster@{{ domain_fqdn }}			{{ sysadmins }}
+{% else %}
+postmaster@{{ domain_fqdn }}			{{ mailadmin }}
+{% endif %}
+
+### Some by hand functional aliases
+#
+#direccion@{{ domain_fqdn }}		director@{{ domain_fqdn }}
+#directora@{{ domain_fqdn }}		director@{{ domain_fqdn }}
+#informatico@{{ domain_fqdn }}		adminred@{{ domain_fqdn }}
+#economia@{{ domain_fqdn }}		jefe.econ@{{ domain_fqdn }}
+#
+# funny names that people type wrong usually
+#john@{{ domain_fqdn }}		jon@{{ domain_fqdn }}
+#yunior@{{ domain_fqdn }}		junior@{{ domain_fqdn }}
+
+# banks & supply chain bills 
+#bills@{{ domain_fqdn }}		cao@{{ domain_fqdn }},bills2pay@{{ domain_fqdn }},etc@{{ domain_fqdn }}
+

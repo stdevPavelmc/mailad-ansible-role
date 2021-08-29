@@ -1,0 +1,38 @@
+---
+# tasks file for mailad
+
+# create config folders
+- include: create_config_folders.yml
+
+# misc
+- include: misc.yml
+
+# Users & group related settings
+- include: users.yml
+
+# SSL settings
+- include: ssl.yml
+
+# postfix
+- include: postfix.yml # TODO enable handlers
+
+# amavis
+- include: amavis.yml # TODO enable handlers
+
+# dovecot
+- include: dovecot.yml # TODO enable handlers
+
+# cron taks
+- include: cron.yml
+
+# disclaimer
+- include: disclaimer.yml
+
+# spamassassin
+- include: spamassassin.yml
+
+# install packages
+- include: install_pkgs.yml
+
+# posts install and close
+- include: post_install.yml

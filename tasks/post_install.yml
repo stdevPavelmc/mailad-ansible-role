@@ -1,0 +1,32 @@
+---
+- name: config ldap to accept the samba cert
+  lineinfile:
+    path: /etc/ldap/ldap.conf
+    regexp: "^TLS_CACERT .*$"
+    line: "TLS_CACERT /etc/ssl/certs/samba.crt"
+  
+- name: Make sure clamav user belongs to amavis group
+  user:
+    name: clamav
+    state: present
+    groups: amavis
+    append: yes
+  when: ( av_enable|bool )
+  notify: Restart amavis
+
+- name: Forced reload configs
+  command: /bin/true
+  notify:
+    - Run mail_groups_update
+    - Apply aliases
+    - compile default.sieve
+    - postmap alias_virtuales
+    - postmap everyone_list_check
+    - postmap lista_negra
+    - Postfix check
+    - Restart amavis
+    - Restart dovecot
+    - Run mail_groups_update
+  changed_when: False
+    
+

@@ -1,0 +1,117 @@
+---
+# handlers file for mailad
+
+# clamv
+- name: Disable clamav-daemon
+  systemd:
+    state: stopped
+    daemon_reload: no
+    enabled: no
+    masked: yes
+    name: clamav-daemon
+  changed_when: False
+
+- name: Disable clamav-freshclam
+  systemd:
+    state: stopped
+    daemon_reload: no
+    enabled: no
+    masked: yes
+    name: clamav-freshclam
+  changed_when: False
+
+- name: Enable clamav-daemon
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    enabled: yes
+    masked: no
+    name: clamav-daemon
+  changed_when: False
+
+- name: Enable clamav-freshclam
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    enabled: yes
+    masked: no
+    name: clamav-freshclam
+  changed_when: False
+
+# spamassassin
+- name: Disable spamassassin
+  systemd:
+    state: stopped
+    daemon_reload: no
+    enabled: no
+    masked: yes
+    name: spamassassin
+  changed_when: False
+
+- name: Enable spamassassin
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    enabled: yes
+    masked: no
+    name: spamassassin
+  changed_when: False
+
+# postfix
+- name: Postfix check
+  command: /usr/sbin/postfix check
+  notify: Reload postfix
+  changed_when: False
+
+- name: Reload postfix
+  command: /usr/sbin/postfix reload
+  notify: Restart postfix
+  changed_when: False
+
+- name: Restart postfix
+  service:
+    name: postfix
+    state: restarted
+  changed_when: False
+
+- name: Apply aliases
+  command: /usr/bin/newaliases
+  changed_when: False
+
+# amavis
+- name: Restart amavis
+  service:
+    name: amavis
+    state: restarted
+  changed_when: False
+
+# dovecot
+- name: Restart dovecot
+  service:
+    name: dovecot
+    state: restarted
+  changed_when: False
+
+- name: compile default.sieve
+  command: /usr/bin/sievec /var/lib/dovecot/sieve/default.sieve
+  changed_when: False
+
+# accesory 
+- name: postmap alias_virtuales
+  command: /usr/sbin/postmap /etc/postfix/aliases/alias_virtuales
+  notify: Reload postfix
+  changed_when: False
+
+- name: postmap everyone_list_check
+  command: /usr/sbin/postmap /etc/postfix/rules/everyone_list_check
+  notify: Reload postfix
+  changed_when: False
+
+- name: postmap lista_negra
+  command: /usr/sbin/postmap /etc/postfix/rules/lista_negra
+  notify: Reload postfix
+  changed_when: False
+
+- name: Run mail_groups_update
+  command: /etc/cron.daily/mail_groups_update
+  changed_when: False

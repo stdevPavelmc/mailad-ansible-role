@@ -1,0 +1,5 @@
+---
+- hosts: mail
+  remote_user: root
+  roles:
+    - mailad

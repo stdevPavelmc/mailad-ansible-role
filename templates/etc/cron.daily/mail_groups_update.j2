@@ -1,0 +1,108 @@
+#!/bin/bash
+
+# This script is part of MailAD, see https://github.com/stdevPavelmc/mailad/
+# Copyright 2020 Pavel Milanes Costa <pavelmc@gmail.com>
+# LICENCE: GPL 3.0 and later  
+#
+# Goal:
+#   - Search and create the groups as aliases in the postfix MTA
+#   - You can create a everyone@domain or whatever you like for all the users
+#   - You can create instantaneous group aliases if you fill the "Email"
+#     property of a group
+#
+# NOTE: This file does not link to the common.conf as this is run as standalone
+# in the system...
+
+# search opt
+SEARCH_OPTS='-o ldif-wrap=no -H "{{ ldap_uri }}" -D "{{ ldap_bind }}" -w "{{ ldap_pass }}" -b "{{ ldap_base }}"'
+
+{% if ( everyone is defined ) and ( not everyone|bool ) %}
+# empty result: Fail
+echo "===> EVERYONE group disabled, skiping..."
+echo "# Everyone list DISABLED in config" > /etc/postfix/aliases/auto_aliases
+echo " " >> /etc/postfix/aliases/auto_aliases
+{% else %}
+echo "===> Trying to retrieve all the emails to form the EVERYONE list"
+echo "===> login into {{ ldap_host }} as {{ ldap_bind }}"
+
+# LDAP query
+RESULT=`ldapsearch $SEARCH_OPTS "(&(objectCategory=person)(objectClass=user)(sAMAccountName=*))" mail | grep "mail: " | grep "@{{ domain_fqdn }}" | awk '{print $2}' | tr '\n' ','`
+
+if [ "$RESULT" == "" ] ; then
+    # empy result: Fail
+    echo "===> Error, something failed..."
+    exit 1
+else
+    # Success
+    echo "===> Success, {{ everyone }} list created"
+    echo "# Everyone list" > /etc/postfix/aliases/auto_aliases
+    echo "{{ everyone }}     $RESULT" >> /etc/postfix/aliases/auto_aliases
+    echo " " >> /etc/postfix/aliases/auto_aliases
+fi
+{% endif %}
+
+# Getting the list of the groups in the search base
+TEMP=`mktemp`
+ldapsearch $SEARCH_OPTS "(&(objectClass=group)(mail=*))" dn | grep "^dn:" > $TEMP
+
+declare -a RES
+# parsing the group names, as it can be coded in base64 when non default charset is used
+while IFS= read -r line ; do
+    L=`echo $line | grep '::'`
+    if [ -z "$L" ] ; then
+        R=`echo $line | cut -d " " -f 2- `
+    else
+        R=`echo $line | cut -d " " -f 2-  | base64 -d`
+    fi
+
+    # aggregate
+    RES+=("$R")
+done < $TEMP
+
+rm $TEMP
+
+for G in "${RES[@]}"; do
+    # search the group dn
+    GEM=`ldapsearch $SEARCH_OPTS "(&(objectClass=group)(distinguishedName=$G))" mail | grep "mail: " | awk '{print $2}'`
+
+    if [ "$GEM" ] ; then
+        RESULT=`ldapsearch $SEARCH_OPTS "(&(objectCategory=person)(objectClass=user)(sAMAccountName=*)(memberOf=$G))" mail | grep "mail: " | awk '{print$2}' | tr '\n' ','`
+
+        echo "# Group: $G" >> /etc/postfix/aliases/auto_aliases
+        echo "$GEM   $RESULT" >> /etc/postfix/aliases/auto_aliases
+        echo " " >> /etc/postfix/aliases/auto_aliases
+    fi 
+done
+
+# updating postfix about the change
+cd /etc/postfix/aliases && postmap auto_aliases
+postfix reload
+
+{% if ( sysadmins is defined ) and ( sysadmins|bool ) %}
+# check for the sysadmin group alias if set
+# search for it on the aliases files
+R=`cat /etc/postfix/aliases/auto_aliases /etc/postfix/aliases/alias_virtuales | awk '{print $1}' | grep "{{ sysadmins }}"`
+if [ -z "$R" ] ; then
+    # notice
+    echo "===> Warning: SYSADMIN group not configured, check your mail for details!"
+
+    # build the email
+    F=`mktemp`
+    echo "You have a SYSADMIN group configured to receive notifications in /etc/mailad/mailad.conf" > $F
+    echo "but the group checking & updating procedure can't find the group you mention in the config," >> $F
+    echo "that means you are losing notification emails, daily mail summaries, etc." >> $F
+    echo " " >> $F
+    echo "The non-existent group is: {{ sysadmins }}" >> $F
+    echo " " >> $F
+    echo "Please check https://github.com/stdevPavelmc/mailad/blob/master/Features.md to know" >> $F
+    echo "how to create the needed group, or simply undefine the variable in the vars yaml file." >> $F
+    echo " " >> $F
+    echo "Cheers, MailAD-Ansible dev team." >> $F
+    echo " " >> $F
+    echo "PS: you will receive this email daily until you solve the issue." >> $F
+
+    # sending the email to the ADMINMAIL declared
+    cat $F | mail {{ mailadmin }} -s "MailAD need your attention: incomplete configuration detected!"
+    rm $F
+fi
+{% endif %}

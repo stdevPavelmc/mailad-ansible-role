@@ -1,0 +1,61 @@
+---
+# This first because it uses tight permissions
+- name: Apply template to /etc/dovecot/dovecot-ldap.conf.ext
+  template:
+    src: ../templates/etc/dovecot/dovecot-ldap.conf.ext.j2
+    dest: /etc/dovecot/dovecot-ldap.conf.ext
+    owner: root
+    group: root
+    mode: '0600'
+    backup: yes
+  notify: Restart dovecot
+
+  # This also uses special exec perms
+- name: Apply template to /etc/dovecot/scripts/quota-warning.sh
+  template:
+    src: ../templates/etc/dovecot/scripts/quota-warning.sh.j2
+    dest: /etc/dovecot/scripts/quota-warning.sh
+    owner: root
+    group: root
+    mode: '0755'
+    backup: yes
+  notify: Restart dovecot
+
+# now the rest
+- name: "Apply templates to /etc/dovecot folder items"
+  template:
+    src: "../templates/etc/dovecot/{{ item }}.j2"
+    dest: "/etc/dovecot/{{ item }}"
+    owner: root
+    group: root
+    mode: '0644'
+    backup: yes
+  loop: "{{ templates_dovecot }}"
+  notify: Restart dovecot
+
+- name: Check if /var/lib/dovecot/sieve directory exists
+  stat:
+    path: /var/lib/dovecot/sieve
+  register: dovecot_sieve_directory_present
+
+- name: Create /var/lib/dovecot/sieve directory
+  file:
+    path: /var/lib/dovecot/sieve
+    state: directory
+    owner: vmail
+    group: vmail
+    mode: '0755'
+  when:
+    - ( not dovecot_sieve_directory_present['stat']['exists'] )
+    - ( dovecot_master_spam_filter|bool )
+
+- name: Apply template to /var/lib/dovecot/sieve/default.sieve
+  template:
+    src: ../templates/var/lib/dovecot/sieve/default.sieve.j2
+    dest: /var/lib/dovecot/sieve/default.sieve
+    owner: "{{ mailbox_uid }}"
+    group: "{{ mailbox_gid }}"
+    mode: '0644'
+    backup: yes
+  when: dovecot_master_spam_filter|bool
+  notify: compile default.sieve

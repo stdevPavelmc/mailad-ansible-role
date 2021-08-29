@@ -1,0 +1,52 @@
+---
+# base packages
+- name: Install Debian base packages
+  package:
+    name: "{{ packages_base.debian }}"
+    state: present
+  when: (ansible_distribution == "Debian" and ansible_distribution_major_version == "10")
+
+- name: Install Ubuntu base packages
+  package:
+    name: "{{ packages_base.debian }}"
+    state: present
+  when: (ansible_distribution == "Ubuntu" and ansible_distribution_major_version in ["18", "20"] )
+
+# disclaimer packages
+- name: Install packages required for disclaimers in emails
+  package:
+    name: "{{ packages_disclaimer }}"
+    state: present
+  when: ( disclaimer_enable|bool )
+
+- name: Remove not needed pkgs for disclaimers in emails
+  package:
+    name: "{{ packages_disclaimer }}"
+    state: absent
+  when: ( disclaimer_enable|bool == False )
+
+# av packages
+- name: Install packages required for av fintering
+  package:
+    name: "{{ packages_av }}"
+    state: present
+  when: ( av_enable|bool )
+
+- name: Remove not needed pkgs for av filtering
+  package:
+    name: "{{ packages_av }}"
+    state: absent
+  when: ( av_enable|bool == False )
+
+# spamd packages
+- name: Install packages required for spam checking
+  package:
+    name: "{{ packages_spamd }}"
+    state: present
+  when: ( spamd_enable|bool )
+
+- name: Remove not needed pkgs for spam checking
+  package:
+    name: "{{ packages_spamd }}"
+    state: absent
+  when: ( spamd_enable|bool == False )

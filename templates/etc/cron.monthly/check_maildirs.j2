@@ -1,0 +1,145 @@
+#!/bin/bash
+
+# This script is part of MailAD, see https://github.com/stdevPavelmc/mailad/
+# Copyright 2020 Pavel Milanes Costa <pavelmc@gmail.com>
+# LICENCE: GPL 3.0 and later
+#
+# Goal:
+#   - Cycle trough the list of maildirs in the mail storage and check
+#       - there is not an user with that maildir?
+#       - check the time of the latest modification time
+#           - Warn the sysadmins about the folder, size and stalled time
+#
+
+VMAILSTORAGE={{ mailbox_path }}
+
+function isthere () {
+    # Just one parameter:
+    #   -  the maildir folder, aka the sAMAccountName property of an existing user
+    #
+    # return empty string or num of entries found
+
+    # LDAP query
+    ldapsearch -o ldif-wrap=no -H "{{ ldap_uri }}" -D "{{ ldap_bind }}" -w "{{ ldap_pass }}" -b "{{ ldap_base }}" "(&(objectClass=person)(sAMAccountName=${1}))" | grep "numEntries: " | awk '{print $3}'
+}
+
+function getdetails() {
+    # just one parameter the particular maildir
+    # return an array:
+    #   - size and name
+    #   - age in days
+
+    echo ${VMAILSTORAGE}
+
+    # folder
+    folder="${VMAILSTORAGE}/${1}"
+
+    # get the data
+    size=`du -sh ${folder}`
+    age=`echo $((($(date +%s) - $(date +%s -r ${folder})) / 86400))`
+
+    # return
+    echo "${size}|${age}"
+}
+
+# vars
+stalledlist=`mktemp`
+warnlist=`mktemp`
+erasedlist=`mktemp`
+mail=0
+
+# check every mailbox
+for md in `ls ${VMAILSTORAGE} | xargs` ; do
+    maildir="{{ mailbox_path }}/$md"
+
+    # only dirs
+    if [ -f "$maildir" ] ; then
+        continue
+    fi
+
+    R=`isthere ${md}`
+    if [ -z "$R" ] ; then
+        mail=1
+        data=`getdetails ${md}`
+        days=`echo $data | cut -d '|' -f2`
+        months=$((${days} / 30))
+        size=`echo $data | cut -d '|' -f1 | awk '{print $1}'`
+
+        # check to see to which list is sent
+        if [ ${days} -gt 273 ] ; then
+            # older than 75 % of a year
+            if [ ${days} -gt 365 ] ; then
+                # delete!
+                printf "%s months/(%s days)\t%s\t%s\n" "${months}" "${days}" "${size}" "${maildir}" >> ${erasedlist}
+
+                # check for real deletion
+{% if not maildir_removal|bool %}
+                # no deletion, warn about the option
+                echo  " " >> ${erasedlist}
+                echo  "WARNING!: There was no deletion at all, as it's a dangerous action it" >> ${erasedlist}
+                echo  "          came disabled by default. You can enable this option in your" >> ${erasedlist}
+                echo  "          yaml vars file and rerun the playbook."  >> ${erasedlist}
+{% else %}
+                # delete it
+                rm -rdf "${maildir}"
+{% endif %}
+            else
+                # warn
+                printf "%s months/(%s days)\t%s\t%s\n" "${months}" "${days}" "${size}" "${maildir}" >> ${warnlist}
+            fi
+        else
+            # stalled on time, just notice
+            printf "%s months/(%s days)\t%s\t%s\n" "${months}" "${days}" "${size}" "${maildir}" >> ${stalledlist}
+        fi
+    fi
+done
+
+# must create the email?
+if [ $mail -ne 0 ] ; then
+    mail=`mktemp`
+    echo "Greetings, " >> $mail
+    echo " " >> $mail
+    echo "We detected some maildir folder(s) left behind, that's normal when you" >> $mail
+    echo "delete a user from the AD, we could remove it automatically but you (or" >> $mail
+    echo "the user) may lose valuable information, so we will limit our action to" >> $mail
+    echo "sending you a monthly reminder of the unused maildirs for you to take action" >> $mail
+    echo " " >> $mail
+    # stalled less than 10 months
+    if [ -s "${stalledlist}" ] ; then
+        echo "=== MAILBOXES THAT NEED ATTENTION ========================================" >> $mail
+        printf "Age\t\t\tSize\tMaildir\n" >> $mail
+        cat "${stalledlist}" >> $mail
+        echo " " >> $mail
+        echo " " >> $mail
+    fi
+    # warn zone > 10 < 12 months
+    if [ -s "${warnlist}" ] ; then
+        echo "=== MAILBOXES THAT WILL BE ERASED SOON! ==================================" >> $mail
+        printf "Age\t\t\tSize\tMaildir\n" >> $mail
+        cat "${warnlist}" >> $mail
+        echo " " >> $mail
+        echo " " >> $mail
+    fi
+    # deleted
+    if [ -s "${erasedlist}" ] ; then
+        echo "=== ERASED MAILBOXES =====================================================" >> $mail
+        printf "Age\t\t\tSize\tMaildir\n" >> $mail
+        cat "${erasedlist}" >> $mail
+        echo " " >> $mail
+        echo " " >> $mail
+    fi
+
+    echo "Please take action to save what's important and erase the" >> $mail
+    echo "used maildirs before they are cleaned automatically." >> $mail
+    echo " " >> $mail
+    echo "Kindly, MailAD server." >> $mail
+    echo " " >> $mail
+
+# check whether to send email to the sysadmins group or the mailadmin and send it
+{% if ( sysadmins is not defined ) or ( not sysadmins|bool ) %}
+    cat $mail | mail -s "MailAD about unused maildir folders..." "{{ mailadmin }}"
+{% elif ( sysadmins is defined ) and ( sysadmins|bool ) %}
+    cat $mail | mail -s "MailAD about unused maildir folders..." "{{ sysadmins }}"
+{% endif %}
+
+fi

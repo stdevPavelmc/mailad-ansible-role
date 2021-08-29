@@ -1,0 +1,40 @@
+---
+- name: Apply template to /etc/mailname
+  template:
+    src: ../templates/etc/mailname.j2
+    dest: /etc/mailname
+    owner: root
+    group: root
+    mode: '0644'
+    backup: yes
+
+- name: Apply template to /etc/aliases
+  template:
+    src: ../templates/etc/aliases.j2
+    dest: /etc/aliases
+    owner: root
+    group: root
+    mode: '0644'
+    backup: yes
+  notify:
+    - Apply aliases
+
+- name: Adjust FQDN in /etc/hosts
+  lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1'
+    line: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}    {{ hostname_fqdn }}    {{ hostname_fqdn.split('.')[0] }}"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Check if we have the samba cert in place already
+  stat:
+    path: /etc/ssl/certs/samba.crt
+  register: samba_cert
+
+
+- name: Retrieve the AD cert and put in on local storage if needed
+  shell: echo | openssl s_client -connect {{ ldap_host }}:636 2>&1 | sed --quiet '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > /etc/ssl/certs/samba.crt
+  when: samba_cert.stat.exists
+  changed_when: False

@@ -1,0 +1,10 @@
+# LDAP to postfix link
+server_host = {{ ldap_uri }}
+timeout = 10
+search_base = {{ ldap_base }}
+query_filter = (&(mail=%u@%d)(memberOf=cn=National_mail,ou=MAIL_ACCESS,{{ ldap_base }}))
+result_attribute = mail
+result_format = mail_national_in
+bind = yes
+bind_dn = {{ ldap_bind }}
+bind_pw = {{ ldap_pass }}

@@ -1,0 +1,253 @@
+# See /usr/share/postfix/main.cf.dist for a commented, more complete version
+
+# Banner
+smtpd_banner = $myhostname ESMTP
+
+# MUA's work
+append_dot_mydomain = no
+
+# Allow delay warnings
+delay_warning_time = 4h
+
+# aliases
+alias_maps = hash:/etc/aliases
+alias_database = hash:/etc/aliases
+
+# hostname and base email domain
+myhostname = {{ hostname_fqdn }}
+mydomain = $myhostname
+
+# default mu destinations (AD's domain will be managed by virtual)
+mydestination = $myhostname, localhost.$mydomain, localhost
+myorigin = $myhostname
+
+# relay host, blank for direct or IP/fqdn for hostname
+relayhost = {{ smarthost | default("") }}
+
+# Only trusted servers/host's  networks here
+mynetworks = 127.0.0.0/8 {{ mynetworks }}
+
+# IPv4 only
+inet_protocols = ipv4
+
+# All interfaces
+inet_interfaces = all
+
+# General parameters
+recipient_delimiter = +
+biff = no
+home_mailbox = Maildir/
+readme_directory = /usr/share/doc/postfix
+html_directory = /usr/share/doc/postfix/html
+
+# Max message size (in bytes, allow ~8% for headers)
+message_size_limit = {{ message_size|int * 1132462 }}
+
+# dovecot managed, unlimited here
+mailbox_size_limit = 0
+
+# amavisd-new filter 
+content_filter = smtp-amavis:[127.0.0.1]:10024
+
+# SASL con dovecot
+smtpd_sasl_type = dovecot
+smtpd_sasl_path = private/auth
+
+# SALS settings
+smtpd_sasl_auth_enable = yes
+smtpd_sasl_authenticated_header = yes
+smtpd_sasl_security_options = noanonymous
+broken_sasl_auth_clients = yes
+
+# TLS
+smtpd_tls_cert_file = {{ ssl_cert | default("/etc/ssl/certs/mail.pem") }}
+smtpd_tls_key_file = {{ ssl_key | default("/etc/ssl/private/mail.pem") }}
+smtpd_tls_CAfile = {{ ssl_cert | default("/etc/ssl/certs/mail.pem") }}
+smtpd_use_tls = yes
+smtpd_sasl_tls_security_options = $smtpd_sasl_security_options
+smtpd_tls_auth_only = yes
+smtp_tls_loglevel = 1
+smtpd_tls_loglevel = 1
+
+# Protection against LogJam, FREAK & POODLE, etc.
+smtpd_tls_eecdh_grade = strong
+smtpd_tls_ciphers = high
+smtpd_tls_mandatory_protocols = !SSLv2,!SSLv3,!TLSv1,!TLSv1.1
+smtpd_tls_protocols = !SSLv2,!SSLv3,!TLSv1,!TLSv1.1
+smtp_tls_mandatory_protocols = !SSLv2,!SSLv3,!TLSv1,!TLSv1.1
+smtp_tls_protocols = !SSLv2,!SSLv3,!TLSv1,!TLSv1.1
+smtpd_tls_exclude_ciphers = aNULL, eNULL, EXPORT, DES, RC4, MD5, PSK, aECDH, EDH-DSS-DES-CBC3-SHA, EDH-RSA-DES-CBC3-SHA, KRB5-DES, CBC3-SHA
+smtpd_tls_dh1024_param_file = /etc/ssl/dh/RSA2048.pem
+
+###### EHLO RESTRICTIONS
+# required ehlo/helo
+smtpd_helo_required = yes
+smtpd_helo_restrictions =
+    permit_mynetworks
+    reject_invalid_helo_hostname
+#   reject_unknown_hostname
+#   reject_non_fqdn_hostname
+
+
+##### CLIENT RESTRICTIONS
+# delay to allow for pipelining on abusive clients, then check for pipelining
+#smtpd_client_restrictions = sleep 1, reject_unauth_pipelining
+#smtpd_delay_reject = no
+
+# Sender user vs. mailbox match check, prevents user's spoofing attacks
+smtpd_sender_login_maps = ldap:/etc/postfix/ldap/email2user.cf
+
+# mailbox to user lookup from the AD
+relay_recipient_maps = ldap:/etc/postfix/ldap/email2user.cf
+
+# Just users I can know about
+smtpd_reject_unlisted_recipient = yes
+
+# Server common error settings
+smtpd_error_sleep_time = 1s
+smtpd_soft_error_limit = 60
+smtpd_hard_error_limit = 10
+
+# Disable verify
+disable_vrfy_command = yes
+
+# headers and body checks
+header_checks = regexp:/etc/postfix/rules/header_checks
+body_checks = regexp:/etc/postfix/rules/body_checks
+
+# Class restrictions
+smtpd_restriction_classes =
+    mail_national_in, mail_national_out,
+    mail_local_in, mail_local_out,
+{% if ( everyone_allow_external_access is not defined ) or ( not everyone_allow_external_access|bool ) %}
+    everyone_list,
+{% endif %}
+
+## National or domain based restriction
+mail_national_in = check_sender_access regexp:/etc/postfix/rules/filter_nat
+mail_national_out = check_recipient_access regexp:/etc/postfix/rules/filter_nat
+
+## LOCAL
+mail_local_in = check_sender_access regexp:/etc/postfix/rules/filter_loc
+mail_local_out = check_recipient_access regexp:/etc/postfix/rules/filter_loc
+
+{% if ( everyone_allow_external_access is not defined ) or ( not everyone_allow_external_access|bool ) %}
+## Everyone list
+everyone_list = check_sender_access regexp:/etc/postfix/rules/filter_loc
+{% endif %}
+
+#### POSTSCREEN filtering on port 25
+# By default postscreen withelist the mynetworks net.
+postscreen_access_list = permit_mynetworks
+# action for bad servers in blacklist
+postscreen_blacklist_action = drop
+# if new lines, bad dog!
+postscreen_bare_newline_action = drop
+# disable verify
+postscreen_disable_vrfy_command = yes
+# enforce the greet action
+postscreen_greet_action = drop
+# no pipelining
+postscreen_pipelining_action = drop
+# no auth in SMTP(25)
+postscreen_command_filter = pcre:/etc/postfix/rules/command_filter.pcre
+# DNSRBL in postscreen
+postscreen_dnsbl_threshold = 3
+postscreen_dnsbl_action = enforce
+postscreen_dnsbl_sites = {{ dnsbl_list }}
+
+# Sender restrictions
+smtpd_sender_restrictions =
+    # On top full privileges 
+    permit_mynetworks
+
+    # User's spoofing enforcement check 
+    reject_unauthenticated_sender_login_mismatch
+    reject_sender_login_mismatch
+
+{% if host_on_internet is defined and host_on_internet|bool %}
+    # Reject unknown sender domains, bad if DNS servers are not reliables
+    reject_unknown_sender_domain
+{% endif %}
+
+    # National or domain based restriction enforcement
+    check_recipient_access ldap:/etc/postfix/ldap/national_in.cf
+    check_sender_access ldap:/etc/postfix/ldap/national_out.cf
+
+    # Local restriction enforcement
+    check_recipient_access ldap:/etc/postfix/ldap/local_in.cf
+    check_sender_access ldap:/etc/postfix/ldap/local_out.cf
+
+    # Black list check
+    check_sender_access hash:/etc/postfix/rules/lista_negra
+
+{% if ( everyone_allow_external_access is not defined ) or ( not everyone_allow_external_access|bool ) %}
+    # check everyone list protection
+    check_recipient_access hash:/etc/postfix/rules/everyone_list_check
+{% endif %}
+
+    # Finaly only if authenticated
+    permit_sasl_authenticated
+
+
+# Recipient restrictions
+smtpd_recipient_restrictions =
+    # Dovecot policy checks (mailbox full?)
+    check_policy_service inet:127.0.0.1:12340
+
+{% if spf_enable is defined and spf_enable|bool %}
+    # check spf settings
+    check_policy_service unix:private/policy-spf
+{% endif %}
+    # On top full privileges
+    permit_mynetworks
+
+    # Reject non fqdn recipients
+    reject_non_fqdn_recipient
+
+{% if host_on_internet is defined and host_on_internet|bool %}
+    # Reject mail from non existant, troublesome if on internal net with bad DNS
+    reject_unknown_recipient_domain
+{% endif %}
+
+    # Fuck open relay!
+    reject_unlisted_recipient
+    reject_unauth_destination
+
+    # Finaly allow only to authenticated users
+    permit_sasl_authenticated
+
+{% if alwaysbcc is defined and alwaysbcc|bool %}
+# Security copy, destination mailbox must exist!
+always_bcc = {{ alwaysbcc }}
+# disable the duplicated bcc
+receive_override_options = no_address_mappings
+{% endif %}
+
+# DEbug options, just in case you need it
+#debug_peer_list = 10.0.3.161
+#debug_peer_level = 16
+
+# Virtual domain settings
+virtual_mailbox_domains = {{ domain_fqdn }}
+virtual_mailbox_maps = ldap:/etc/postfix/ldap/mailbox_maps.cf
+virtual_alias_maps = hash:/etc/postfix/aliases/alias_virtuales, hash:/etc/postfix/aliases/auto_aliases
+virtual_mailbox_base = {{ mailbox_path }}
+virtual_minimum_uid = 100
+virtual_uid_maps = static:{{ mailbox_uid }}
+virtual_gid_maps = static:{{ mailbox_gid }}
+virtual_transport = dovecot
+
+# Dovecot need a "just one" deliver policy
+dovecot_destination_recipient_limit = 1
+dovecot_destination_concurrency_limit = 1
+
+# SMTP send auth to a upstream smart host see /etc/postfix/sasl_passwd file for comments
+#smtp_sasl_auth_enable = yes
+#smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+
+# Compatibility
+compatibility_level = 2
+
+# Spanish messages template
+bounce_template_file = /etc/postfix/bounce.cf

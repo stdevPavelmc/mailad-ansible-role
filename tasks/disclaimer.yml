@@ -1,0 +1,24 @@
+---
+- name: Apply template to /etc/postfix/disclaimer
+  template:
+    src: ../templates/etc/postfix/disclaimer.j2
+    dest: /etc/postfix/disclaimer
+    owner: root
+    group: filter
+    mode: '0750'
+    backup: yes
+  when:
+    - ( disclaimer_enable is defined )
+    - ( disclaimer_enable|bool )
+
+- name: Apply template to /etc/disclaimer/disclaimer.txt
+  template:
+    src: ../templates/etc/disclaimer/disclaimer.txt.j2
+    dest: /etc/disclaimer/disclaimer.txt
+    owner: root
+    group: filter
+    mode: '0644'
+    backup: yes
+  when:
+    - ( disclaimer_enable is defined )
+    - ( disclaimer_enable|bool )

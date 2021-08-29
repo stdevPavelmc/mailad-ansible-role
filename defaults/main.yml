@@ -1,0 +1,136 @@
+---
+# defaults file for mailad
+
+# base packages for debian (10) / Ubuntu (18/20)
+packages_base:
+  debian:
+    - postfix
+    - postfix-pcre
+    - postfix-ldap
+    - dovecot-pop3d
+    - dovecot-imapd
+    - dovecot-ldap
+    - dovecot-sieve
+    - dovecot-managesieved
+    - libnet-ldap-perl
+    - ldap-utils
+    - rsync
+    - dnsutils
+    - pflogsumm
+    - mailutils
+    - amavisd-new
+    - p7zip-full
+    - unrar-free
+    - cabextract
+  ubuntu:
+    - postfix
+    - postfix-pcre
+    - postfix-ldap
+    - dovecot-pop3d
+    - dovecot-imapd
+    - dovecot-ldap
+    - dovecot-sieve
+    - dovecot-managesieved
+    - libnet-ldap-perl
+    - ldap-utils
+    - rsync
+    - dnsutils
+    - pflogsumm
+    - mailutils
+    - amavisd-new-postfix
+    - p7zip-full
+    - p7zip-rar
+    - unrar-free
+    - cabextract
+
+packages_disclaimer:
+  - altermime
+
+packages_av:
+  - clamav-daemon
+  - clamav-freshclam
+
+packages_spamd:
+  - spamassassin
+
+packages_pyssl:
+  - python3-openssl
+
+# config templates per software
+templates_amavis:
+  - README.l10n
+  - conf.d/01-debian
+  - conf.d/05-domain_id
+  - conf.d/05-node_id
+  - conf.d/15-av_scanners
+  - conf.d/15-content_filter_mode
+  - conf.d/20-debian_defaults
+  - conf.d/21-ubuntu_defaults
+  - conf.d/25-amavis_helpers
+  - conf.d/30-template_localization
+  - conf.d/40-policy_banks
+  - conf.d/50-user
+  - en_US/charset
+  - en_US/template-auto-response.txt
+  - en_US/template-dsn.txt
+  - en_US/template-problem-feedback.txt
+  - en_US/template-release-quarantine.txt
+  - en_US/template-spam-admin.txt
+  - en_US/template-spam-sender.txt
+  - en_US/template-virus-admin.txt
+  - en_US/template-virus-recipient.txt
+  - en_US/template-virus-sender.txt
+
+templates_dovecot:
+  - dovecot.conf
+  - conf.d/10-auth.conf
+  - conf.d/10-logging.conf
+  - conf.d/10-mail.conf
+  - conf.d/10-master.conf
+  - conf.d/10-ssl.conf
+  - conf.d/15-lda.conf
+  - conf.d/15-mailboxes.conf
+  - conf.d/20-imap.conf
+  - conf.d/20-managesieve.conf
+  - conf.d/20-pop3.conf
+  - conf.d/90-acl.conf
+  - conf.d/90-plugin.conf
+  - conf.d/90-quota.conf
+  - conf.d/90-sieve-extprograms.conf
+  - conf.d/90-sieve.conf
+  - conf.d/90-stats-perms.conf
+  - conf.d/auth-ldap.conf.ext
+
+postfix_templates:
+  - bounce.cf
+  - main.cf
+  - master.cf
+  - ldap/email2user.cf
+  - ldap/local_in.cf
+  - ldap/local_out.cf
+  - ldap/mailbox_maps.cf
+  - ldap/national_in.cf
+  - ldap/national_out.cf
+  - rules/auth_filter.pcre
+  - rules/body_checks
+  - rules/command_filter.pcre
+  - rules/disclaimer_domains
+  - rules/filter_nat
+  - rules/header_checks
+
+# folders
+folders_postfix:
+  - aliases
+  - ldap
+  - rules
+
+folders_dovecot:
+  - conf.d
+  - scripts
+
+folders_amavis:
+  - conf.d
+  - en_US
+
+folders_ssl:
+  - dh

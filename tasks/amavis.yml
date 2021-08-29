@@ -1,0 +1,11 @@
+---
+- name: "Apply templates to /etc/amavis folder items"
+  template:
+    src: "../templates/etc/amavis/{{ item }}.j2"
+    dest: "/etc/amavis/{{ item }}"
+    owner: root
+    group: root
+    mode: '0644'
+    backup: yes
+  loop: "{{ templates_amavis }}"
+  notify: Restart amavis

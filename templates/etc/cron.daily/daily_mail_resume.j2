@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# This script is part of MailAD, see https://github.com/stdevPavelmc/mailad/
+# Copyright 2020 Pavel Milanes Costa <pavelmc@gmail.com>
+# LICENCE: GPL 3.0 and later  
+#
+# Goals:
+#   - Create a resume of yesterday mail services
+#   - Send it to the mail admin
+
+# loading vars
+PFSL=`which pflogsumm`
+OPTS="-d yesterday -e -i --iso-date-time --problems-first"
+FILE="/var/log/mail.log /var/log/mail.log.1"
+TMP=`tempfile`
+
+# check for soft
+if [ "$PFSL" == "" ] ; then
+    # no soft installed, warning
+    echo "MailAD: Can't make the mail traffic summary because pflogsumm software is missing!"
+    exit 1
+fi
+
+# executing
+$PFSL $OPTS $FILE > $TMP
+
+# check whether to send email to the sysadmins group or the mailadmin and send it
+{% if ( sysadmins is not defined ) or ( not sysadmins|bool ) %}
+cat $TMP | mail -s "MailAD: Yesterday's mail traffic Summary" {{ mailadmin }}
+{% elif ( sysadmins is defined ) and ( sysadmins|bool ) %}
+cat $TMP | mail -s "MailAD: Yesterday's mail traffic Summary" {{ sysadmins }}
+{% endif %}
+
+rm $TMP

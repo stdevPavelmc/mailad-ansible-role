@@ -1,0 +1,69 @@
+---
+# vars file for mailad
+
+domain_fqdn: mailad.cu
+hostname_fqdn: mail.mailad.cu
+mailadmin: pavelmc@{{ domain_fqdn }}
+sysadmins:
+alwaysbcc:
+message_size: 2
+mailbox_size: 200M
+mynetworks: 10.42.1.0/24
+smarthost:
+everyone:
+national: ".cu" # end domain name, with the start dot, like ".edu.cu"
+
+# mailbox settings
+mailbox_username: vmail
+mailbox_uid: 5000
+mailbox_gid: "{{ mailbox_uid }}"
+mailbox_path: "/home/vmail"
+
+# LDAP credentials
+ldap_host: dc.mailad.cu
+ldap_uri: "ldaps://{{ ldap_host }}"
+ldap_bind: cn=Linux,dc=Users,dc=mailad,dc=cu
+ldap_pass: "SuperSecret!"
+ldap_base: "ou=MAILAD,dc=mailad,dc=cu"
+
+# SSL cert settings
+ssl_country: CU
+ssl_state: Camaguey
+ssl_city: Camaguey
+ssl_organization: MailAD
+ssl_ou: Test
+ssl_cert: /etc/ssl/certs/mail.crt
+ssl_key: /etc/ssl/private/mail.key
+
+# DNSBL settings
+dnsbl_list: "zen.spamhaus.org=127.0.0.[2..11]*2, psbl.surriel.com, bl.spamcop.net, bl.spameatingmonkey.net"
+
+# AV alternate mirrors
+av_alternate_mirror:
+  - http://mirror.webtastix.net/clamav
+  - http://103.230.76.202/clamav
+  - http://mirrors.mediatemple.net/freshclam
+  - http://repo.virtualhosting.hk/clamavdb"
+
+# proxy settings
+proxy_user: pavel
+proxy_pass: Super_Password
+proxy_host: 1.2.3.4
+proxy_port: 8080
+
+# Conditionals
+everyone_allow_external_access: False
+dovecot_master_spam_filter: False
+own_cert: True
+dnsbl_enable: False
+spf_enable: False
+av_enable: True
+av_use_alternate_mirror: True
+spamd_enable: False
+use_proxy: False
+disclaimer_enable: False
+disclaimer_reach_locals: False
+maildir_removal: False
+statistics_enable: True
+host_on_internet: False
+ssl_generate: True

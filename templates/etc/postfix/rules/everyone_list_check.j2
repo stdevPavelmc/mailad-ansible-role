@@ -1,0 +1,6 @@
+# DO NOT EDIT BY HAND
+# this file is used to protect the inside everyone list from outside
+
+{% if ( everyone_allow_external_access is defined ) and ( everyone_allow_external_access == False ) and ( everyone ) %}
+{{ everyone }}         everyone_list
+{% endif %}

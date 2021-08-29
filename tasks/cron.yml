@@ -1,0 +1,58 @@
+---
+- name: Apply template to /etc/cron.daily/mail_groups_update
+  template:
+    src: ../templates/etc/cron.daily/mail_groups_update.j2
+    dest: /etc/cron.daily/mail_groups_update
+    owner: root
+    group: root
+    mode: '0750'
+    backup: yes
+  # notify: Run mail_groups_update # TOENABLE
+
+- name: Apply template to /etc/cron.daily/daily_mail_resume
+  template:
+    src: ../templates/etc/cron.daily/daily_mail_resume.j2
+    dest: /etc/cron.daily/daily_mail_resume
+    owner: root
+    group: root
+    mode: '0755'
+    backup: yes
+
+- name: Apply template to /etc/cron.monthly/check_maildirs
+  template:
+    src: ../templates/etc/cron.monthly/check_maildirs.j2
+    dest: /etc/cron.monthly/check_maildirs
+    owner: root
+    group: root
+    mode: '0750'
+    backup: yes
+
+- name: Apply template to /etc/cron.hourly/av_filter_on_clamav_alive
+  template:
+    src: ../templates/etc/cron.hourly/av_filter_on_clamav_alive.j2
+    dest: /etc/cron.hourly/av_filter_on_clamav_alive
+    owner: root
+    group: root
+    mode: '0750'
+    backup: yes
+  when: ( av_enable is defined ) and ( av_enable|bool )
+  notify:
+    - Enable clamav-freshclam
+    - Enable clamav-daemon
+
+- name: Remove /etc/cron.hourly/av_filter_on_clamav_alive
+  file:
+    path: /etc/cron.hourly/av_filter_on_clamav_alive
+    state: absent
+  when: ( av_enable is defined ) and ( not av_enable|bool )
+  notify:
+    - Disable clamav-freshclam
+    - Disable clamav-daemon
+
+- name: Remove /etc/cron.daily/spamassassin
+  file:
+    path: /etc/cron.daily/spamassassin
+    state: absent
+  when:
+     - ( spamd_enable is not defined ) or ( not spamd_enable|bool )
+  notify: Disable spamassassin

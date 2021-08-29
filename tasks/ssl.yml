@@ -1,0 +1,49 @@
+---
+# pyPpenSSL packages
+- name: Install packages required for python SSL handling
+  package:
+    name: "{{ packages_pyssl }}"
+    state: present
+  when: ( not ssl_cert|bool and not ssl_key|bool )
+
+- name: Remove not needed pkgs for python SSL handling
+  package:
+    name: "{{ packages_pyssl }}"
+    state: absent
+  when: ( ssl_cert|bool and ssl_key|bool )
+
+# dh generate
+- name: Generate DH Parameters (2048 bits)
+  openssl_dhparam:
+    path: /etc/ssl/dh/RSA2048.pem
+    size: 2048
+    mode: '0644'
+
+# Create the self signed certificate
+- name: Generate an OpenSSL private key.
+  openssl_privatekey:
+    owner: root
+    group: root
+    mode: 0640 
+    path: "{{ ssl_key }}"
+
+- name: Generate an OpenSSL CSR.
+  openssl_csr:
+    owner: root
+    group: root
+    mode: 0640 
+    path: /etc/ssl/private/mail.csr
+    privatekey_path: "{{ ssl_key }}"
+    country_name: "{{ ssl_country }}"
+    state_or_province_name: "{{ ssl_state }}"
+    locality_name: "{{ ssl_city }}"
+    organization_name: "{{ ssl_organization }}"
+    common_name: "{{ hostname_fqdn }}"
+    email_address: "{{ mailadmin }}"
+
+- name: Generate a Self Signed OpenSSL certificate.
+  openssl_certificate:
+    path: "{{ ssl_cert }}"
+    privatekey_path: "{{ ssl_key }}"
+    csr_path: /etc/ssl/private/mail.csr
+    provider: selfsigned
