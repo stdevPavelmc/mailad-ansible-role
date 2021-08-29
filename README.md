@@ -24,3 +24,5 @@ Author Information
 ------------------
 
 [Pavel Milanes](https://github.com/stdevPavelmc), same author of the [MailAD](https://github.com/stdevPavelmc/mailad) mail server provision script.
+
+This Ansible role is based on a previous work done porting MailAD to Ansible by [@dienteperro](https://github.com/dienteperro), you can see his work here: [ansible-mailad](https://github.com/dienteperro/mailad-ansible)
