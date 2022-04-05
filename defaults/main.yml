@@ -12,6 +12,7 @@ packages_base:
     - dovecot-ldap
     - dovecot-sieve
     - dovecot-managesieved
+    - libldap-common
     - libnet-ldap-perl
     - ldap-utils
     - rsync
@@ -31,6 +32,8 @@ packages_base:
     - dovecot-ldap
     - dovecot-sieve
     - dovecot-managesieved
+    - ldap-utils
+    - libldap-common
     - libnet-ldap-perl
     - ldap-utils
     - rsync
