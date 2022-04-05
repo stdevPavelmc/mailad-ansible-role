@@ -32,7 +32,6 @@ packages_base:
     - dovecot-ldap
     - dovecot-sieve
     - dovecot-managesieved
-    - ldap-utils
     - libldap-common
     - libnet-ldap-perl
     - ldap-utils
