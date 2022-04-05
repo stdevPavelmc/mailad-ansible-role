@@ -1,5 +1,6 @@
 # LDAP to postfix link
-server_host = {{ ldap_uri }}
+server_host = {% if ldap_host is defined %}{% for item in ldap_host %}ldaps://{{ item }}:636/{% if not loop.last %} {% endif %}{% endfor %}{% endif %}
+
 timeout = 10
 search_base = {{ ldap_base }}
 query_filter = (&(mail=%u@%d)(memberOf=cn=Local_mail,ou=MAIL_ACCESS,{{ ldap_base }}))

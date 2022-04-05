@@ -44,3 +44,13 @@
     mode: '0644'
   loop: "{{ postfix_templates }}"
   notify: Postfix check
+
+- name: "Apply templates to /etc/postfix/ldap folder items"
+  template:
+    src: "../templates/etc/postfix/ldap/{{ item }}.j2"
+    dest: "/etc/postfix/ldap/{{ item }}"
+    owner: root
+    group: root
+    mode: '0640'
+  loop: "{{ postfix_ldap_templates }}"
+  notify: Postfix check
