@@ -14,7 +14,7 @@
 # in the system...
 
 # search opt
-SEARCH_OPTS='-o ldif-wrap=no -H "{{ ldap_uri }}" -D "{{ ldap_bind }}" -w "{{ ldap_pass }}" -b "{{ ldap_base }}"'
+SEARCH_OPTS='-o ldif-wrap=no -H "{% if ldap_host is defined %}{% for item in ldap_host %}ldaps://{{ item }}:636/{% if not loop.last %} {% endif %}{% endfor %}{% endif %}" -D "{{ ldap_bind }}" -w "{{ ldap_pass }}" -b "{{ ldap_base }}"'
 
 {% if ( everyone is defined ) and ( not everyone|bool ) %}
 # empty result: Fail
