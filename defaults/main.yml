@@ -120,6 +120,14 @@ postfix_templates:
   - rules/disclaimer_domains
   - rules/filter_nat
   - rules/header_checks
+  
+postfix_ldap_templates:
+  - email2user.cf
+  - local_in.cf
+  - local_out.cf
+  - mailbox_maps.cf
+  - national_in.cf
+  - national_out.cf
 
 # folders
 folders_postfix:
