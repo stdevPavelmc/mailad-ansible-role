@@ -21,7 +21,9 @@
 
 # LDAP URIs to use. You can use this instead of hosts list. Note that this
 # setting isn't supported by all LDAP libraries.
-uris = {{ ldap_uri }}
+{% if ldap_host is defined %}
+uris = "{% for item in ldap_host %}ldaps://{{ item }}:636/{% if not loop.last %} {% endif %}{% endfor %}"
+{% endif %}
 
 # Distinguished Name - the username used to login to the LDAP server.
 # Leave it commented out to bind anonymously (useful with auth_bind=yes).

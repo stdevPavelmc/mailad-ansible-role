@@ -1,4 +1,15 @@
 ---
+- name: Apply template to /etc/postfix/recipient_bcc
+  template:
+    src: ../templates/etc/postfix/recipient_bcc.j2
+    dest: /etc/postfix/recipient_bcc
+    owner: root
+    group: root
+    mode: '0644'
+    backup: yes
+  notify: postmap recipient_bcc
+  when: recipientbcc is defined
+
 - name: Apply template to /etc/postfix/aliases/alias_virtuales
   template:
     src: ../templates/etc/postfix/aliases/alias_virtuales.j2
@@ -43,4 +54,14 @@
     group: root
     mode: '0644'
   loop: "{{ postfix_templates }}"
+  notify: Postfix check
+
+- name: "Apply templates to /etc/postfix/ldap folder items"
+  template:
+    src: "../templates/etc/postfix/ldap/{{ item }}.j2"
+    dest: "/etc/postfix/ldap/{{ item }}"
+    owner: root
+    group: root
+    mode: '0640'
+  loop: "{{ postfix_ldap_templates }}"
   notify: Postfix check

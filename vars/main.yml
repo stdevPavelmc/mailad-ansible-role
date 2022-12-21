@@ -6,6 +6,8 @@ hostname_fqdn: mail.mailad.cu
 mailadmin: pavelmc@{{ domain_fqdn }}
 sysadmins:
 alwaysbcc:
+#recipientbcc:
+#  - { to: cuenta.to , bcc: cuenta.bcc }
 message_size: 2
 mailbox_size: 200M
 mynetworks: 10.42.1.0/24
@@ -20,8 +22,9 @@ mailbox_gid: "{{ mailbox_uid }}"
 mailbox_path: "/home/vmail"
 
 # LDAP credentials
-ldap_host: dc.mailad.cu
-ldap_uri: "ldaps://{{ ldap_host }}"
+ldap_host:
+  - dc.mailad.cu
+  - dc2.mailad.cu
 ldap_bind: cn=Linux,dc=Users,dc=mailad,dc=cu
 ldap_pass: "SuperSecret!"
 ldap_base: "ou=MAILAD,dc=mailad,dc=cu"

@@ -20,7 +20,7 @@ function isthere () {
     # return empty string or num of entries found
 
     # LDAP query
-    ldapsearch -o ldif-wrap=no -H "{{ ldap_uri }}" -D "{{ ldap_bind }}" -w "{{ ldap_pass }}" -b "{{ ldap_base }}" "(&(objectClass=person)(sAMAccountName=${1}))" | grep "numEntries: " | awk '{print $3}'
+    ldapsearch -o ldif-wrap=no -H "{% if ldap_host is defined %}{% for item in ldap_host %}ldaps://{{ item }}:636/{% if not loop.last %} {% endif %}{% endfor %}{% endif %}" -D "{{ ldap_bind }}" -w "{{ ldap_pass }}" -b "{{ ldap_base }}" "(&(objectClass=person)(sAMAccountName=${1}))" | grep "numEntries: " | awk '{print $3}'
 }
 
 function getdetails() {

@@ -111,6 +111,10 @@
   command: /usr/sbin/postmap /etc/postfix/rules/lista_negra
   notify: Reload postfix
   changed_when: False
+  
+- name: postmap recipient_bcc
+  command: /usr/sbin/postmap /etc/postfix/recipient_bcc
+  notify: Reload postfix
 
 - name: Run mail_groups_update
   command: /etc/cron.daily/mail_groups_update
