@@ -8,7 +8,7 @@
     mode: '0644'
     backup: yes
   notify: postmap recipient_bcc
-  when: mailad_recipientbcc is defined
+  when: recipientbcc is defined
 
 - name: Apply template to /etc/postfix/aliases/alias_virtuales
   template:
