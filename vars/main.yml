@@ -6,6 +6,8 @@ hostname_fqdn: mail.mailad.cu
 mailadmin: pavelmc@{{ domain_fqdn }}
 sysadmins:
 alwaysbcc:
+#recipientbcc:
+#  - { to: cuenta.to , bcc: cuenta.bcc }
 message_size: 2
 mailbox_size: 200M
 mynetworks: 10.42.1.0/24
