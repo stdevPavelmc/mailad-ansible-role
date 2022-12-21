@@ -1,4 +1,15 @@
 ---
+- name: Apply template to /etc/postfix/recipient_bcc
+  template:
+    src: ../templates/etc/postfix/recipient_bcc.j2
+    dest: /etc/postfix/recipient_bcc
+    owner: root
+    group: root
+    mode: '0644'
+    backup: yes
+  notify: postmap recipient_bcc
+  when: mailad_recipientbcc is defined
+
 - name: Apply template to /etc/postfix/aliases/alias_virtuales
   template:
     src: ../templates/etc/postfix/aliases/alias_virtuales.j2
