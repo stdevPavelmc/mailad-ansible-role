@@ -220,6 +220,14 @@ smtpd_recipient_restrictions =
 {% if alwaysbcc is defined and alwaysbcc|bool %}
 # Security copy, destination mailbox must exist!
 always_bcc = {{ alwaysbcc }}
+{% endif %}
+
+{% if mailad_recipientbcc is defined %}
+# Security copy, destination mailbox must exist!
+recipient_bcc_maps = hash:/etc/postfix/recipient_bcc
+{% endif %}
+
+{% if ( mailad_recipientbcc is defined ) or ( alwaysbcc is defined and alwaysbcc|bool ) %}
 # disable the duplicated bcc
 receive_override_options = no_address_mappings
 {% endif %}
