@@ -1,0 +1,5 @@
+{% if mailad_recipientbcc is defined %}
+{% for item in mailad_recipientbcc %}
+{{ item['to'] }} {{ item['bcc'] }}
+{% endfor %}
+{% endif %}
